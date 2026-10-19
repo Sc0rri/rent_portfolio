@@ -1,0 +1,649 @@
+openapi: 3.0.0
+servers:
+  - description: Server URL
+    url: http://site.local/
+info:
+  version: "1.0.0"
+  title: Rental Tariff API
+tags:
+  - name: auth
+    description: Authentication
+  - name: seasons
+    description: Seasons
+  - name: tariffs
+    description: Tariffs
+paths:
+  /auth:
+    post:
+      summary: Authenticate and obtain a token
+      operationId: postAuth
+      tags:
+        - auth
+      parameters:
+        - in: header
+          name: Accept-Language
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: lang
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  description: User login
+                  type: string
+                password:
+                  description: User password
+                  type: string
+              required:
+                - login
+                - password
+      responses:
+        '200':
+          description: Access token and user information
+          headers:
+            X-RateLimit-Limit:
+              description: Maximum number of requests allowed per minute
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              description: Remaining number of allowed requests
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              description: Number of seconds to wait until the maximum number of allowed requests is restored
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_time:
+                    description: Request time
+                    format: date-time
+                    example: '2025-08-29T09:12:33+00:00'
+                  payload:
+                    description: Response payload
+                    type: object
+                    properties:
+                      token:
+                        description: Bearer token
+                        type: string
+                        example: '{bearer_token}'
+                      user:
+                        $ref: '#/components/schemas/User'
+                  errors:
+                    description: Request errors
+                    type: array
+                    items: {}
+                    example: null
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_time:
+                    description: Request time
+                    format: date-time
+                    example: '2025-08-29T09:12:33+00:00'
+                  payload:
+                    description: Response payload
+                    type: object
+                    example: null
+                  errors:
+                    description: Request errors
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items: {}
+                    example:
+                      login:
+                        - Login is required
+                      password:
+                        - Password is required
+        '401':
+          description: Failed to authenticate the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_time:
+                    description: Request time
+                    format: date-time
+                    example: '2025-08-29T09:12:33+00:00'
+                  payload:
+                    description: Response payload
+                    type: object
+                    example: null
+                  errors:
+                    description: Request errors
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items: {}
+                    example:
+                      password:
+                        - Login and password do not match any existing user
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorServer'
+              example:
+                name: Too Many Requests
+                message: Rate limit exceeded.
+                code: 0
+                status: 429
+        default:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorServer'
+  /seasons:
+    get:
+      summary: Get seasons
+      operationId: getSeasons
+      tags:
+        - seasons
+      security:
+        - bearer: []
+      parameters:
+        - in: header
+          name: Accept-Language
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: lang
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: pageSize
+          description: Number of items per page
+          required: false
+          example: '20'
+          schema:
+            type: integer
+        - in: query
+          name: page
+          description: Current page
+          required: false
+          example: '2'
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of seasons
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_time:
+                    description: Request time
+                    format: date-time
+                    example: '2025-08-29T09:12:33+00:00'
+                  payload:
+                    description: Response payload
+                    type: object
+                    required:
+                      - seasons
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      seasons:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Season'
+                  errors:
+                    description: Request errors
+                    type: array
+                    items: {}
+                    example: null
+        '401':
+          description: Authorization required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Authorization required
+        default:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorServer'
+  /tariffs/daily:
+    get:
+      summary: Get daily tariffs
+      operationId: getTariffsDaily
+      tags:
+        - tariffs
+      security:
+        - bearer: []
+      parameters:
+        - in: header
+          name: Accept-Language
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: lang
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: pageSize
+          description: Number of items per page
+          required: false
+          example: '20'
+          schema:
+            type: integer
+        - in: query
+          name: page
+          description: Current page
+          required: false
+          example: '2'
+          schema:
+            type: integer
+        - in: query
+          name: vehicleCode
+          description: Code of a specific vehicle
+          required: false
+          example: 'test-1'
+          schema:
+            type: string
+        - in: query
+          name: season
+          description: Season ID
+          required: false
+          example: '1'
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of daily tariffs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_time:
+                    description: Request time
+                    format: date-time
+                    example: '2025-08-29T09:12:33+00:00'
+                  payload:
+                    description: Response payload
+                    type: object
+                    required:
+                      - tariffs
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      tariffs:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TariffDaily'
+                  errors:
+                    description: Request errors
+                    type: array
+                    items: {}
+                    example: null
+        '401':
+          description: Authorization required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Authorization required
+        '403':
+          description: Access to the vehicle passed in vehicleCode is forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Forbidden
+        '404':
+          description: The vehicle passed in vehicleCode was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Not found
+        default:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorServer'
+  /tariffs/month:
+    get:
+      summary: Get monthly tariffs
+      operationId: getTariffsMonth
+      tags:
+        - tariffs
+      security:
+        - bearer: []
+      parameters:
+        - in: header
+          name: Accept-Language
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: lang
+          description: Language code
+          required: false
+          example: 'ru'
+          schema:
+            type: string
+        - in: query
+          name: pageSize
+          description: Number of items per page
+          required: false
+          example: '20'
+          schema:
+            type: integer
+        - in: query
+          name: page
+          description: Current page
+          required: false
+          example: '2'
+          schema:
+            type: integer
+        - in: query
+          name: vehicleCode
+          description: Code of a specific vehicle
+          required: false
+          example: 'test-1'
+          schema:
+            type: string
+        - in: query
+          name: season
+          description: Season ID
+          required: false
+          example: '1'
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of monthly tariffs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_time:
+                    description: Request time
+                    format: date-time
+                    example: '2025-08-29T09:12:33+00:00'
+                  payload:
+                    description: Response payload
+                    type: object
+                    required:
+                      - tariffs
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      tariffs:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TariffMonth'
+                  errors:
+                    description: Request errors
+                    type: array
+                    items: {}
+                    example: null
+        '401':
+          description: Authorization required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Authorization required
+        '403':
+          description: Access to the vehicle passed in vehicleCode is forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Forbidden
+        '404':
+          description: The vehicle passed in vehicleCode was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Not found
+        default:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorServer'
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+  schemas:
+    Pagination:
+      description: Pagination
+      type: object
+      required:
+        - page
+        - perPage
+        - totalPages
+      properties:
+        perPage:
+          description: Items per page
+          type: integer
+          example: "10"
+        total:
+          description: Total number of items
+          type: integer
+          example: "102"
+        page:
+          description: Current page
+          type: integer
+          example: "3"
+        totalPages:
+          description: Total number of pages
+          type: integer
+          example: "11"
+    Error:
+      description: Error
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          description: Error message
+          type: string
+    ErrorServer:
+      description: Server error
+      type: object
+      properties:
+        name:
+          description: Error name
+          type: string
+          example: "Internal Server Error"
+        message:
+          description: Error message
+          type: string
+          example: "An internal server error has occurred."
+        code:
+          description: Error code
+          type: integer
+          example: 0
+        status:
+          description: Error status
+          type: integer
+          example: 500
+    Season:
+      description: Season
+      type: object
+      required:
+        - id
+        - name
+        - vehicleType
+        - isCurrent
+        - period
+      properties:
+        id:
+          description: Season ID
+          type: integer
+          example: 1
+        name:
+          description: Season name
+          type: string
+          example: "High season"
+        vehicleType:
+          description: Vehicle type
+          type: integer
+          example: 1
+        isCurrent:
+          description: Current season
+          type: integer
+          example: 1
+        period:
+          description: Season periods
+          type: array
+          items:
+            type: string
+            example: "01-01 - 03-31"
+    TariffDaily:
+      description: Daily tariff
+      type: object
+      required:
+        - id
+        - vehicleCode
+        - season
+        - seasonName
+        - minDays
+        - maxDays
+        - price
+      properties:
+        id:
+          description: Tariff ID
+          type: integer
+          example: 1
+        vehicleCode:
+          description: Vehicle code
+          type: string
+          example: "test-1"
+        season:
+          description: Season ID
+          type: integer
+          example: 1
+        seasonName:
+          description: Season name
+          type: string
+          example: "High season"
+        minDays:
+          description: Minimum number of days
+          type: integer
+          example: 1
+        maxDays:
+          description: Maximum number of days
+          type: integer
+          example: 7
+        price:
+          description: Price
+          type: number
+          example: 1000.00
+    TariffMonth:
+      description: Monthly tariff
+      type: object
+      required:
+        - id
+        - vehicleCode
+        - season
+        - seasonName
+        - price
+        - useForCalculate
+      properties:
+        id:
+          description: Tariff ID
+          type: integer
+          example: 1
+        vehicleCode:
+          description: Vehicle code
+          type: string
+          example: "test-1"
+        season:
+          description: Season ID
+          type: integer
+          example: 1
+        seasonName:
+          description: Season name
+          type: string
+          example: "High season"
+        price:
+          description: Price
+          type: number
+          example: 15000.00
+        useForCalculate:
+          description: Use the monthly price to calculate the price for rentals shorter than a month
+          type: integer
+    User:
+      description: User information
+      type: object
+      required:
+        - login
+        - name
+        - email
+        - phone
+      properties:
+        login:
+          description: User login
+          type: string
+          format: uuid
+          example: 'user'
+        name:
+          description: User name
+          type: string
+          example: 'Test'
+        email:
+          description: User email
+          type: string
+          example: 'test@example.com'
+        phone:
+          description: User phone
+          type: string
+          example: '+1111111111111'

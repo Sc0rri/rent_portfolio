@@ -1,0 +1,17 @@
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Dependencies
+/vendor/
+
+# Yii2 runtime
+/runtime/
+
+# OS
+.DS_Store
+Thumbs.db
